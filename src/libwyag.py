@@ -10,9 +10,10 @@ import re
 import sys
 import zlib
 
-argparser = argparse.ArgumentParser(description="The smartest content tracker!")
+# Creates the argument parser so we can accept the commands (init, commit, etc.) through the command line.
+argparser = argparse.ArgumentParser(description="kgit — My own Git version control system!")
 argsubparsers = argparser.add_subparsers(title="Commands", dest="command")
-argsubparsers.required = True
+argsubparsers.required = True # Require an argument from the user.
 
 def main(argv=sys.argv[1:]):
     args = argparser.parse_args(argv)
