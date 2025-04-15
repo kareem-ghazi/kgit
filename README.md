@@ -1,8 +1,8 @@
-<!-- <div align="center">
+<div align="center">
   <br>
-  <img src="meta/sawarly_banner.svg" width="45%" alt="Sawarly" style="margin: 10px 0;" />
+  <img src="kgit-logo.svg" alt="Sawarly" style="margin: 10px 0;" />
   <br><br>
-</div> -->
+</div>
 
 <div align="center" style="line-height: 1;">
   <a href="https://github.com/kareem-ghazi/kgit" target="_blank" style="margin: 2px;">
