@@ -1,6 +1,6 @@
 <div align="center">
   <br>
-  <img src="kgit-logo.png" alt="Sawarly" width="30%" style="margin: 10px 0;" />
+  <img src="kgit-logo.png" alt="Sawarly" width="40%" style="margin: 10px 0;" />
   <br><br>
 </div>
 
