@@ -34,7 +34,7 @@ def object_read(repo, sha):
     if not os.path.isfile(path):
         return None
 
-    with open (path, "rb") as f:
+    with open(path, "rb") as f:
         raw = zlib.decompress(f.read())
 
         # Read object type
@@ -54,7 +54,7 @@ def object_read(repo, sha):
             case b'tag'    : c=GitTag
             case b'blob'   : c=GitBlob
             case _:
-                raise Exception(f"Unknown type {fmt.decode("ascii")} for object {sha}")
+                raise Exception(f"Unknown type {fmt.decode('ascii')} for object {sha}")
 
         # Call constructor and return object
         return c(raw[y+1:])
@@ -76,3 +76,29 @@ def object_write(obj, repo=None):
                 # Compress and write
                 f.write(zlib.compress(result))
     return sha
+
+def object_find(repo, name, fmt=None, follow=True):
+    return name
+
+def object_hash(fd, fmt, repo=None):
+    """ Hash object, writing it to repo if provided."""
+    data = fd.read()
+
+    # Choose constructor according to fmt argument
+    match fmt:
+        case b'commit' : obj=GitCommit(data)
+        case b'tree'   : obj=GitTree(data)
+        case b'tag'    : obj=GitTag(data)
+        case b'blob'   : obj=GitBlob(data)
+        case _: raise Exception(f"Unknown type {fmt}!")
+
+    return object_write(obj, repo)
+
+class GitBlob(GitObject):
+    fmt=b'blob'
+
+    def serialize(self):
+        return self.blobdata
+
+    def deserialize(self, data):
+        self.blobdata = data
