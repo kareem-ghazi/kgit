@@ -80,6 +80,10 @@ argsp.add_argument("commit",
 argsp.add_argument("path",
                    help="The EMPTY directory to checkout on.")
 
+# kgit show-ref
+argsp = argsubparsers.add_parser("show-ref", help="List references.")
+
+
 def cmd_init(args):
     GitRepository.repo_create(args.path)
     
@@ -198,6 +202,65 @@ def tree_checkout(repo, tree, path):
             with open(dest, 'wb') as f:
                 f.write(obj.blobdata)
 
+def ref_resolve(repo, ref):
+    path = GitRepository.repo_file(repo, ref)
+
+    # Sometimes, an indirect reference may be broken.  This is normal
+    # in one specific case: we're looking for HEAD on a new repository
+    # with no commits.  In that case, .git/HEAD points to "ref:
+    # refs/heads/main", but .git/refs/heads/main doesn't exist yet
+    # (since there's no commit for it to refer to).
+    if not os.path.isfile(path):
+        return None
+
+    # Reads the path and stores it as 'fp'.
+    with open(path, 'r') as fp:
+        data = fp.read()[:-1]
+        # Drop final \n ^^^^^
+    # If the path is an indirect reference, recurse through it again starting from index 5
+    # to drop the 'ref: '.
+    if data.startswith("ref: "):
+        return ref_resolve(repo, data[5:])
+    # If it's just a SHA-1 hash or we reach a SHA-1 hash, return it.
+    else:
+        return data
+
+def ref_list(repo, path=None):
+    if not path:
+        # If there is no clear refs dir path, find the 'refs' dir path in the current 'repo'.
+        path = GitRepository.repo_dir(repo, "refs")
+    ret = dict()
+    # Git shows refs sorted.  To do the same, we sort the output of
+    # listdir
+    for f in sorted(os.listdir(path)):
+        # Join every item in the directory to the path so we have a full path.
+        can = os.path.join(path, f)
+        
+        # If the joined path is a directory, recurse through it so we find all the refs.
+        if os.path.isdir(can):
+            ret[f] = ref_list(repo, can) # This is technically a dictionary that has another dictionary (directory) at ref 'f'.
+        # Recurse through each ref until we find the SHA-1 hash.
+        else:
+            ret[f] = ref_resolve(repo, can)
+
+    return ret
+
+def cmd_show_ref(args):
+    repo = GitRepository.repo_find()
+    refs = ref_list(repo)
+    show_ref(repo, refs, prefix="refs")
+
+def show_ref(repo, refs, with_hash=True, prefix=""):
+    if prefix:
+        prefix = prefix + '/'
+    for k, v in refs.items():
+        if type(v) == str and with_hash:
+            print (f"{v} {prefix}{k}")
+        elif type(v) == str:
+            print (f"{prefix}{k}")
+        else:
+            show_ref(repo, v, with_hash=with_hash, prefix=f"{prefix}{k}")
+
 def main(argv=sys.argv[1:]):
     args = argparser.parse_args(argv)
     
@@ -214,7 +277,7 @@ def main(argv=sys.argv[1:]):
         case "ls-tree"      : cmd_ls_tree(args)
         # case "rev-parse"    : cmd_rev_parse(args)
         # case "rm"           : cmd_rm(args)
-        # case "show-ref"     : cmd_show_ref(args)
+        case "show-ref"     : cmd_show_ref(args)
         # case "status"       : cmd_status(args)
         # case "tag"          : cmd_tag(args)
         case _              : print("Bad command.")
